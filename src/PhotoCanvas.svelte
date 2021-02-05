@@ -1,5 +1,5 @@
 <script>
-import { getContext, onMount } from "svelte";
+import { getContext } from "svelte";
 
 
         export let canvasDimensions = {
@@ -12,6 +12,8 @@ import { getContext, onMount } from "svelte";
         const {fillStyle, globalAlpha, circleRadius, circleCenter} = getContext("params");
         const {grayscale, brightness, sepia, hueRotate, saturate, contrast} = getContext("filter")
 
+
+        //Making sure that we don't move the circle out of bounds(OOB)
         const getCircleBounds = (canvas, radius, cursorX, cursorY) => {
             let target = {
                 x: 0,
@@ -37,12 +39,16 @@ import { getContext, onMount } from "svelte";
             }
             return target
         }
+        //
 
+        // Cleaning listeners 
         const removeMoveListners = () => {
             window.removeEventListener("mousemove", handleCircleMovement)
             window.removeEventListener("mouseup", removeMoveListners)
         }
+        //
 
+        //Handling the movements of circle on mouse events
         const handleCircleMovement = (e) => {
             const cursorX = e.clientX - circleCanvas.getBoundingClientRect().x
             const cursorY = e.clientY - circleCanvas.getBoundingClientRect().y
@@ -52,14 +58,18 @@ import { getContext, onMount } from "svelte";
                 y: target.y
             }
         };
+        //
 
+        //Positioning the circle in center with every resize/reupload
         $: if (editedImage) {
             $circleCenter = {
                 x: canvasDimensions.targetWidth/2,
                 y: canvasDimensions.targetHeight/2
             }
         };
+        //
 
+        //Making sure that circle never gets OOB with every resize
         $: if ($circleRadius) {
             if ($circleCenter.x + $circleRadius > canvasDimensions.targetWidth) {
                 $circleCenter.x = canvasDimensions.targetWidth - $circleRadius
@@ -74,7 +84,9 @@ import { getContext, onMount } from "svelte";
                 $circleCenter.y = $circleRadius
             }
         };
+        //
 
+        //Reacting to every change of params and updating the canvas with image
         $:  if (photoCanvas && circleCanvas && editedImage) {
             const photoctx = photoCanvas.getContext("2d");
             photoCanvas.width = circleCanvas.width = canvasDimensions.targetWidth;
@@ -83,8 +95,9 @@ import { getContext, onMount } from "svelte";
             photoctx.drawImage(editedImage, 0, 0, photoCanvas.width, photoCanvas.height);
             drawRectWithCircle(circleCanvas, $circleRadius, $fillStyle, $globalAlpha, $circleCenter);
         };
+        //
 
-
+        //Draw the rect with circle inside to ensure comfortable positioning for cutting the circular image
         const drawRectWithCircle = (canvas, radius, fillStyle, globalAlpha, $circleCenter) => {
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0,0,canvas.width, canvas.height)
@@ -96,6 +109,7 @@ import { getContext, onMount } from "svelte";
             ctx.arc($circleCenter.x, $circleCenter.y, radius, 0, 2 * Math.PI)
             ctx.fill()
         };
+        //
 
 </script>
 

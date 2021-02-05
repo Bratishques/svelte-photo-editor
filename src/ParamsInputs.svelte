@@ -12,15 +12,18 @@ import { getContext } from "svelte";
         maxCircleRad  = getMaxCircleRadius(canvasDimensions);
     };
 
+    //Changing the context state to match the circle bounds
     $: if ($circleRadius > maxCircleRad) {
             $circleRadius = maxCircleRad
         }
-
+    //
+    
+    //By doing this function on each update, we ensure that circle never gets OOB
     const getMaxCircleRadius = (canvasDimensions) => {
         const min = Math.min(canvasDimensions.targetWidth, canvasDimensions.targetHeight)
         return min/2
     };
-    
+    //
 </script>
 
 <div class="md:w-6/12 mb-8">

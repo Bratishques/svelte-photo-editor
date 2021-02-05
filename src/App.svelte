@@ -3,7 +3,7 @@ import FilterContext from "./FilterContext.svelte";
 
 import ParamsContext from "./ParamsContext.svelte";
 
-	import PhotoEditor from "./PhotoEditor.svelte";
+import PhotoEditor from "./PhotoEditor.svelte";
 </script>
 
 <main>

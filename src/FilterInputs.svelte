@@ -1,7 +1,7 @@
 <script>
 import { getContext } from "svelte";
 
-
+    //This file separates the inputs from other components
     const {grayscale, brightness, sepia, hueRotate, saturate, contrast} = getContext("filter");
 
 </script>

@@ -18,7 +18,7 @@ import PhotoCanvas from "./PhotoCanvas.svelte";
     const {circleRadius, circleCenter} = getContext('params')
     
 
-
+    //onMount resize listener for responsive interface
     onMount(async () => {
         window.addEventListener("resize", () => {
             maxWidth = canvasParent.getBoundingClientRect().width
@@ -28,7 +28,9 @@ import PhotoCanvas from "./PhotoCanvas.svelte";
          }
         })
     })
+    //
 
+    //Listeners for canvas resize
     const moveRightListener = (e) => {
         dragStartX = dragPositionX
         dragPositionX = e.pageX
@@ -54,13 +56,17 @@ import PhotoCanvas from "./PhotoCanvas.svelte";
         resizeCanvasWithImage(scale);
         window.addEventListener("mouseup", removeListeners)
     }
+    //
 
+    //Cleaning listneres
     const removeListeners = () => {
         window.removeEventListener("mousemove", moveRightListener)
         window.removeEventListener("mousemove", moveLeftListener)
         window.removeEventListener("mouseup", removeListeners)
     }
+    //
 
+    //Click handlers
     const dragRight = (e) => {
         dragStartX = dragPositionX = e.pageX
         window.addEventListener("mousemove", moveRightListener)
@@ -70,6 +76,7 @@ import PhotoCanvas from "./PhotoCanvas.svelte";
         dragStartX = dragPositionX = e.pageX
         window.addEventListener("mousemove", moveLeftListener)
     };
+    //
 
     const checkMaxWidth = (initialWidth, initialHeight, maxWidth) => {
         let targetWidth = initialWidth
@@ -81,6 +88,7 @@ import PhotoCanvas from "./PhotoCanvas.svelte";
         return {targetWidth, targetHeight}
     };
 
+    //Function to pass the the values to state and start the callback chain to resize the image
     const resizeCanvasWithImage = (scale) => {
         const targetWidth = canvasDimensions.targetWidth * scale
         canvasDimensions = {
@@ -88,7 +96,9 @@ import PhotoCanvas from "./PhotoCanvas.svelte";
             targetHeight: targetWidth * editedImage.height/editedImage.width
         }
     };
+    //
 
+    //Cutting the image from photo with with filters
     const cutImage = () => {
         const photoCanvas = document.getElementById("photoCanvas")
         const photoctx = photoCanvas.getContext("2d")
@@ -109,14 +119,18 @@ import PhotoCanvas from "./PhotoCanvas.svelte";
         resultctx.fill()
         resultParent.appendChild(result)
     };
+    //
 
+    //Adapter to get file url from file
     const URLFromFile = (e) => {
         console.log(e.target.files[0])
         const url = URL.createObjectURL(e.target.files[0])
         uploadImage(url)
         e.target.value = null
     }
+    //
 
+    //Upload image from given url
     const uploadImage = (url) => {
         const image = new Image()
         image.src = url
@@ -126,6 +140,7 @@ import PhotoCanvas from "./PhotoCanvas.svelte";
            editedImage = image
         }
     };
+    //
 </script>
 
 <div class="relative md:p-16 p-6">
