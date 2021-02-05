@@ -5,6 +5,7 @@ import ParamsInputs from "./ParamsInputs.svelte";
 import PhotoCanvas from "./PhotoCanvas.svelte";
 
     let canvasParent;
+    let resultParent;
     let editedImage = null;
     let maxWidth = null;
     let dragStartX = null;
@@ -14,10 +15,12 @@ import PhotoCanvas from "./PhotoCanvas.svelte";
         targetHeight: 0
     }
 
+    const {circleRadius, circleCenter} = getContext('params')
+    
 
-    onMount( async () => {
+
+    onMount(async () => {
         window.addEventListener("resize", () => {
-
             maxWidth = canvasParent.getBoundingClientRect().width
             if (canvasDimensions.targetWidth > maxWidth) {
              const scale = maxWidth/canvasDimensions.targetWidth;
@@ -61,12 +64,12 @@ import PhotoCanvas from "./PhotoCanvas.svelte";
     const dragRight = (e) => {
         dragStartX = dragPositionX = e.pageX
         window.addEventListener("mousemove", moveRightListener)
-    }
+    };
 
     const dragLeft = (e) => {
         dragStartX = dragPositionX = e.pageX
         window.addEventListener("mousemove", moveLeftListener)
-    }
+    };
 
     const checkMaxWidth = (initialWidth, initialHeight, maxWidth) => {
         let targetWidth = initialWidth
@@ -76,7 +79,7 @@ import PhotoCanvas from "./PhotoCanvas.svelte";
             targetHeight = initialHeight * (maxWidth/initialWidth)
         }
         return {targetWidth, targetHeight}
-    }
+    };
 
     const resizeCanvasWithImage = (scale) => {
         const targetWidth = canvasDimensions.targetWidth * scale
@@ -84,19 +87,45 @@ import PhotoCanvas from "./PhotoCanvas.svelte";
             targetWidth: targetWidth,
             targetHeight: targetWidth * editedImage.height/editedImage.width
         }
+    };
+
+    const cutImage = () => {
+        const photoCanvas = document.getElementById("photoCanvas")
+        const photoctx = photoCanvas.getContext("2d")
+        const result = document.createElement('canvas')
+        result.style.marginBottom="20px"
+        const resultctx = result.getContext("2d")
+        const left = $circleCenter.x - $circleRadius
+        const top = $circleCenter.y - $circleRadius
+        const resultData = photoctx.getImageData(left, top,
+        $circleRadius*2, $circleRadius*2)
+        console.log($circleCenter, $circleRadius)
+        result.width = result.height = $circleRadius*2
+        resultctx.putImageData(resultData, 0 ,0)
+        resultctx.globalCompositeOperation="destination-in";
+        resultctx.globalAlpha = 1
+        resultctx.beginPath()
+        resultctx.arc($circleRadius, $circleRadius, $circleRadius,0,2 * Math.PI)
+        resultctx.fill()
+        resultParent.appendChild(result)
+    };
+
+    const URLFromFile = (e) => {
+        console.log(e.target.files[0])
+        const url = URL.createObjectURL(e.target.files[0])
+        uploadImage(url)
+        e.target.value = null
     }
 
-    const uploadImage = (e) => {
-        console.log(e.target.files[0])
+    const uploadImage = (url) => {
         const image = new Image()
-        image.src = URL.createObjectURL(e.target.files[0])
+        image.src = url
         image.onload = () => {
            maxWidth = canvasParent.getBoundingClientRect().width
            canvasDimensions = checkMaxWidth(image.width, image.height, maxWidth)
            editedImage = image
-           e.target.value = null
         }
-    }
+    };
 </script>
 
 <div class="relative md:p-16 p-6">
@@ -116,7 +145,7 @@ import PhotoCanvas from "./PhotoCanvas.svelte";
                         Upload
                     </label>
                 </button>
-                <input class="hidden" type="file" name="image" id="image" on:change={uploadImage}>
+                <input class="hidden" type="file" name="image" id="image" on:change={URLFromFile}>
             </div>
 
         </div>
@@ -124,20 +153,37 @@ import PhotoCanvas from "./PhotoCanvas.svelte";
         <FilterInputs/>
         <ParamsInputs canvasDimensions={canvasDimensions}/>   
         </div>
+        <div class="flex justify-center w-full">
+            <button class="rounded bg-blue-400 p-2 text-white font-semibold"
+            disabled="{!editedImage}"
+            on:click={cutImage}
+            >
+                    Cut the Image
+                </button>
+        </div>
 
  
 
     </div>
 
     </div>
-    <div bind:this={canvasParent} class="relative w-full h-full bg-gray-200 flex justify-center">
+    <div bind:this={canvasParent} class="relative w-full h-full bg-gray-200 flex justify-center mb-8">
         <div class="select-none relative w-auto flex">
-            <PhotoCanvas canvasDimensions={canvasDimensions} editedImage={editedImage}/>
+            <PhotoCanvas canvasDimensions={canvasDimensions} editedImage={editedImage} circleCenter={circleCenter}
+            />
             <div on:mousedown={dragLeft}
             class="rounded cursor-nw z-30 {editedImage ? 'absolute' : 'hidden'} w-4 h-4 bg-red-600  border-2 border-gray-400"></div>
             <div on:mousedown={dragRight}  class="rounded  cursor-ne z-30 {editedImage ? 'absolute' : 'hidden'} w-4 h-4 bg-red-600  border-2 border-gray-400 right-0"></div>
             <div  on:mousedown={dragRight} class="rounded  cursor-nwse z-30 {editedImage ? 'absolute' : 'hidden'} w-4 h-4 bg-red-600   border-2 border-gray-400 right-0 bottom-0"></div>
             <div on:mousedown={dragLeft}  class="rounded cursor-nesw z-30 {editedImage ? 'absolute' : 'hidden'} w-4 h-4 bg-red-600 border-2 border-gray-400 bottom-0"></div>
+        </div>
+    </div>
+    <div>
+        <div class="mb-4 text-2xl font-semibold">Results</div>
+        <div 
+        bind:this={resultParent}
+        class="w-full">
+        
         </div>
     </div>
 </div>
