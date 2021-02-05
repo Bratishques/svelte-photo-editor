@@ -1,6 +1,6 @@
-## Svetle Image Editor
+## Svelte Image Editor
 
-Just a practice project I made first time using Svetle, it is already deployed to http://wasteful-steam.surge.sh/
+Just a practice project I made first time using Svelte, it is already deployed to http://wasteful-steam.surge.sh/
 
 To run on your local machine clone the repo, install all npm modules and run by typing
 `npm run dev`
