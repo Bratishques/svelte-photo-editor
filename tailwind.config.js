@@ -1,5 +1,6 @@
 const production = !process.env.ROLLUP_WATCH; // or some other env var like NODE_ENV
 module.exports = {
+  darkMode: "class",
   theme: {
     extend: {
         cursor: {

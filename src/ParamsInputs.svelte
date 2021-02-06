@@ -49,7 +49,7 @@ import { getContext } from "svelte";
             </label>
         <label class="mb-4 flex w-72 justify-between">
             Overlay Color Hex
-            <input class="ml-4" type="text" value={$fillStyle}>
+            <input class="pl-5 w-24 ml-4 dark:bg-gray-700" type="text" value={$fillStyle}>
         </label>
     </div>
 </div>

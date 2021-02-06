@@ -29,6 +29,7 @@ label {
 	display: block;
 }
 
+
 input, button, select, textarea {
 	font-family: inherit;
 	font-size: inherit;
@@ -51,7 +52,7 @@ button {
 }
 
 button:disabled {
-	color: #999;
+	opacity: 0.5;
 }
 
 button:not(:disabled):active {

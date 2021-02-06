@@ -1,19 +1,24 @@
-<script>
+<script lang="ts">
 import { getContext, onMount } from "svelte";
 import FilterInputs from "./FilterInputs.svelte";
 import ParamsInputs from "./ParamsInputs.svelte";
 import PhotoCanvas from "./PhotoCanvas.svelte";
-
-    let canvasParent;
-    let resultParent;
-    let editedImage = null;
-    let maxWidth = null;
-    let dragStartX = null;
-    let dragPositionX = null;
-    let canvasDimensions = {
+import ResultCanvas from "./ResultCanvas.svelte";
+    
+    type CanvasDimensions = {
+        targetWidth: number,
+        targetHeight: number
+    }
+    let canvasParent: HTMLDivElement;
+    let editedImage: HTMLImageElement;
+    let maxWidth: number;
+    let dragStartX: number;
+    let dragPositionX: number;
+    let canvasDimensions : CanvasDimensions = {
         targetWidth: 0,
         targetHeight: 0
     }
+    let results: HTMLCanvasElement[] = [];
 
     const {circleRadius, circleCenter} = getContext('params')
     
@@ -100,7 +105,7 @@ import PhotoCanvas from "./PhotoCanvas.svelte";
 
     //Cutting the image from photo with with filters
     const cutImage = () => {
-        const photoCanvas = document.getElementById("photoCanvas")
+        const photoCanvas = document.getElementById("photoCanvas") as HTMLCanvasElement
         const photoctx = photoCanvas.getContext("2d")
         const result = document.createElement('canvas')
         result.style.marginBottom="20px"
@@ -117,7 +122,7 @@ import PhotoCanvas from "./PhotoCanvas.svelte";
         resultctx.beginPath()
         resultctx.arc($circleRadius, $circleRadius, $circleRadius,0,2 * Math.PI)
         resultctx.fill()
-        resultParent.appendChild(result)
+        results = [...results, result]
     };
     //
 
@@ -184,7 +189,7 @@ import PhotoCanvas from "./PhotoCanvas.svelte";
     </div>
     <div bind:this={canvasParent} class="relative w-full h-full bg-gray-200 flex justify-center mb-8">
         <div class="select-none relative w-auto flex">
-            <PhotoCanvas canvasDimensions={canvasDimensions} editedImage={editedImage} circleCenter={circleCenter}
+            <PhotoCanvas canvasDimensions={canvasDimensions} editedImage={editedImage}
             />
             <div on:mousedown={dragLeft}
             class="rounded cursor-nw z-30 {editedImage ? 'absolute' : 'hidden'} w-4 h-4 bg-red-600  border-2 border-gray-400"></div>
@@ -194,11 +199,13 @@ import PhotoCanvas from "./PhotoCanvas.svelte";
         </div>
     </div>
     <div>
-        <div class="mb-4 text-2xl font-semibold">Results</div>
-        <div 
-        bind:this={resultParent}
-        class="w-full">
-        
+        {#if results.length}
+        <div class="mb-4 text-2xl font-semibold text-center">Results</div>
+        <div class="w-full">
+            {#each results as result}
+            <ResultCanvas result = {result}/>
+            {/each}
         </div>
+        {/if}
     </div>
 </div>

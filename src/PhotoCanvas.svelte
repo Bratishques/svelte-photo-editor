@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 import { getContext } from "svelte";
 
 
@@ -6,9 +6,9 @@ import { getContext } from "svelte";
         targetWidth: 0,
         targetHeight: 0
         };
-        export let editedImage = null;
-        let photoCanvas;
-        let circleCanvas;
+        export let editedImage:HTMLImageElement;
+        let photoCanvas: HTMLCanvasElement;
+        let circleCanvas: HTMLCanvasElement;
         const {fillStyle, globalAlpha, circleRadius, circleCenter} = getContext("params");
         const {grayscale, brightness, sepia, hueRotate, saturate, contrast} = getContext("filter")
 
