@@ -36,7 +36,7 @@ import { onMount } from "svelte";
 
 </script>
 
-<div class="relative top-8 md:ml-16 z-30 ml-6 mb-8">
+<div class="">
     <button 
     class="rounded bg-blue-400 p-2 text-white font-semibold"
     on:click={switchTheme}

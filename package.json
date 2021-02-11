@@ -28,7 +28,11 @@
     "tslib": "^2.0.0"
   },
   "dependencies": {
+    "@rollup/plugin-json": "^4.1.0",
     "@tailwindcss/ui": "^0.7.2",
+    "@tensorflow/tfjs-node": "^3.0.0",
+    "canvas": "^2.6.1",
+    "face-api.js": "^0.22.2",
     "rollup-plugin-postcss": "^4.0.0",
     "sirv-cli": "^1.0.0"
   }

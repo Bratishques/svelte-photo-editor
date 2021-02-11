@@ -1,8 +1,8 @@
 <script lang="ts">
-import FilterContext from "./FilterContext.svelte";
+import FaceContext from "./context/FaceContext.svelte";
 
-import ParamsContext from "./ParamsContext.svelte";
-
+import FilterContext from "./context/FilterContext.svelte";
+import ParamsContext from "./context/ParamsContext.svelte";
 import PhotoEditor from "./PhotoEditor.svelte";
 import ThemeSwitcher from "./ThemeSwitcher.svelte";
 </script>
@@ -10,9 +10,10 @@ import ThemeSwitcher from "./ThemeSwitcher.svelte";
 <main class="relative dark:text-gray-200 text-gray-900 dark:bg-gray-800">
 	<ParamsContext>
 		<FilterContext>
+      <FaceContext>
       <ThemeSwitcher/>
-
-			<PhotoEditor/>
+      <PhotoEditor/>
+      </FaceContext>
 		</FilterContext>
 	</ParamsContext>
 

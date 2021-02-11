@@ -1,5 +1,7 @@
 <script lang="ts">
 import { getContext, onMount } from "svelte";
+import faceapi from "../faceApi/faceapi";
+import FaceInputs from "./FaceInputs.svelte";
 import FilterInputs from "./FilterInputs.svelte";
 import ParamsInputs from "./ParamsInputs.svelte";
 import PhotoCanvas from "./PhotoCanvas.svelte";
@@ -9,6 +11,7 @@ import ResultCanvas from "./ResultCanvas.svelte";
         targetWidth: number,
         targetHeight: number
     }
+    let isResizing: boolean = false
     let canvasParent: HTMLDivElement;
     let editedImage: HTMLImageElement;
     let maxWidth: number;
@@ -36,7 +39,7 @@ import ResultCanvas from "./ResultCanvas.svelte";
     //
 
     //Listeners for canvas resize
-    const moveRightListener = (e) => {
+    const moveRightListener = (e:MouseEvent) => {
         dragStartX = dragPositionX
         dragPositionX = e.pageX
         const deltaX = dragPositionX - dragStartX
@@ -49,7 +52,7 @@ import ResultCanvas from "./ResultCanvas.svelte";
         window.addEventListener("mouseup", removeListeners)
     }
 
-    const moveLeftListener = (e) => {
+    const moveLeftListener = (e:MouseEvent) => {
         dragStartX = dragPositionX
         dragPositionX = e.pageX
         const deltaX = dragStartX - dragPositionX
@@ -65,6 +68,7 @@ import ResultCanvas from "./ResultCanvas.svelte";
 
     //Cleaning listneres
     const removeListeners = () => {
+        isResizing = false
         window.removeEventListener("mousemove", moveRightListener)
         window.removeEventListener("mousemove", moveLeftListener)
         window.removeEventListener("mouseup", removeListeners)
@@ -72,18 +76,20 @@ import ResultCanvas from "./ResultCanvas.svelte";
     //
 
     //Click handlers
-    const dragRight = (e) => {
+    const dragRight = (e:MouseEvent) => {
+        isResizing = true
         dragStartX = dragPositionX = e.pageX
         window.addEventListener("mousemove", moveRightListener)
     };
 
-    const dragLeft = (e) => {
+    const dragLeft = (e:MouseEvent) => {
+        isResizing = true
         dragStartX = dragPositionX = e.pageX
         window.addEventListener("mousemove", moveLeftListener)
     };
     //
 
-    const checkMaxWidth = (initialWidth, initialHeight, maxWidth) => {
+    const checkMaxWidth = (initialWidth:number, initialHeight:number, maxWidth:number) => {
         let targetWidth = initialWidth
         let targetHeight = initialHeight
         if (initialWidth > maxWidth) {
@@ -94,7 +100,7 @@ import ResultCanvas from "./ResultCanvas.svelte";
     };
 
     //Function to pass the the values to state and start the callback chain to resize the image
-    const resizeCanvasWithImage = (scale) => {
+    const resizeCanvasWithImage = (scale:number) => {
         const targetWidth = canvasDimensions.targetWidth * scale
         canvasDimensions = {
             targetWidth: targetWidth,
@@ -135,8 +141,16 @@ import ResultCanvas from "./ResultCanvas.svelte";
     }
     //
 
+    //Adapter to get URL from text input
+    
+    //
+
+    //Adapter to get image URL from camera
+
+    //
+
     //Upload image from given url
-    const uploadImage = (url) => {
+    const uploadImage = (url: string) => {
         const image = new Image()
         image.src = url
         image.onload = () => {
@@ -173,6 +187,9 @@ import ResultCanvas from "./ResultCanvas.svelte";
         <FilterInputs/>
         <ParamsInputs canvasDimensions={canvasDimensions}/>   
         </div>
+        <div class="w-full md:flex">
+        <FaceInputs/>
+        </div>
         <div class="flex justify-center w-full">
             <button class="rounded bg-blue-400 p-2 text-white font-semibold"
             disabled="{!editedImage}"
@@ -191,7 +208,11 @@ import ResultCanvas from "./ResultCanvas.svelte";
         <div class="select-none relative w-auto flex">
             <PhotoCanvas canvasDimensions={canvasDimensions} editedImage={editedImage}
             />
-            <div on:mousedown={dragLeft}
+            <div 
+            on:touchstart = {(e) => {
+                console.log(e)
+            }}
+            on:mousedown={dragLeft}
             class="rounded cursor-nw z-30 {editedImage ? 'absolute' : 'hidden'} w-4 h-4 bg-red-600  border-2 border-gray-400"></div>
             <div on:mousedown={dragRight}  class="rounded  cursor-ne z-30 {editedImage ? 'absolute' : 'hidden'} w-4 h-4 bg-red-600  border-2 border-gray-400 right-0"></div>
             <div  on:mousedown={dragRight} class="rounded  cursor-nwse z-30 {editedImage ? 'absolute' : 'hidden'} w-4 h-4 bg-red-600   border-2 border-gray-400 right-0 bottom-0"></div>
