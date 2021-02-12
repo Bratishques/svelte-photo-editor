@@ -1,23 +1,44 @@
 <script lang="ts">
+import type { Point } from "face-api.js";
+
 import { getContext } from "svelte";
 import faceapi from "../faceApi/faceapi";
-import PhotoCanvas from "./PhotoCanvas.svelte";
 const {enableDetection} = getContext('face');
 
     let landmarks:object[]
     let eyeFilter:string = "stoned"
 
+    interface FacePartRect {
+        startX: number,
+        startY: number,
+        angle: number,
+        width: number,
+        height: number
+    }
+
+    const rotateAndPaint = (ctx:CanvasRenderingContext2D, startX:number, startY:number, width:number, height:number, angle:number, image:HTMLImageElement) => {
+        console.log(startX+ width/2)
+        ctx.translate(startX + width/2, startY + height/2)
+        ctx.rotate(angle)
+        ctx.translate(-(startX + width/2), - (startY + height/2))
+        ctx.drawImage(image, startX, startY, width, height)
+        ctx.setTransform(1,0,0,1,0,0)
+    }
 
     $: if (landmarks) {
         console.log(landmarks)
     }
 
-    const getEyeRect = (eye) => {
+    const getEyeRect = (eye: Point[]) => {
+        let partRect: FacePartRect
         const startX = eye[0].x - 15
         const width = (eye[3].x - startX) * 1.5
         const startY = eye[2].y - 15
         const height = (eye[5].y - startY) * 2.2
-        return {startX, startY, width, height}
+        const angle = Math.asin((eye[3].y - eye[0].y)/(eye[3].x - eye[0].x))
+        console.log(angle)
+        return partRect = {startX, startY, width, height, angle}
+        
     }
 
 
@@ -47,7 +68,19 @@ const {enableDetection} = getContext('face');
             const leftEyeImg = new Image()
             leftEyeImg.src = eyeImgPath + "left.png"
             leftEyeImg.onload = () => {
-                photoctx.drawImage(leftEyeImg, leftEye.startX, leftEye.startY, leftEye.width, leftEye.height)
+                rotateAndPaint(
+                photoctx,
+                leftEye.startX,
+                leftEye.startY,
+                leftEye.width,
+                leftEye.height,
+                leftEye.angle,
+                leftEyeImg
+                )
+                // photoctx.translate(leftEye.startX + leftEye.width/2, leftEye.startY + leftEye.height/2)
+                // photoctx.rotate(leftEye.angle)
+                // photoctx.drawImage(leftEyeImg, leftEye.startX, leftEye.startY, leftEye.width, leftEye.height)
+                // photoctx.restore()
             }
 
             //Getting the image for right eye
@@ -55,7 +88,20 @@ const {enableDetection} = getContext('face');
             const rightEyeImg = new Image()
             rightEyeImg.src = eyeImgPath + "right.png"
             rightEyeImg.onload = () => {
-                photoctx.drawImage(rightEyeImg, rightEye.startX, rightEye.startY, rightEye.width, rightEye.height)
+
+                rotateAndPaint(
+                    photoctx,
+                    rightEye.startX,
+                    rightEye.startY,
+                    rightEye.width,
+                    rightEye.height,
+                    rightEye.angle,
+                    rightEyeImg
+                )
+                // photoctx.translate(rightEye.startX + rightEye.width/2, rightEye.startY + rightEye.height/2)
+                // photoctx.rotate(rightEye.angle)
+                // photoctx.drawImage(rightEyeImg, rightEye.startX, rightEye.startY, rightEye.width, rightEye.height)
+                // photoctx.restore()
             }
 
             // ctx.fillStyle = "blue"
