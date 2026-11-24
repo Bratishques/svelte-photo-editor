@@ -1,19 +1,20 @@
 <script lang="ts">
-import { getFaceContext, getFilterContext, getParamsContext, type CircleCenter } from "./lib/context";
+import { getFaceContext, getFilterContext, getHistoryContext, getParamsContext, type CircleCenter } from "./lib/context";
+import { drawEyeOverlay } from "./lib/eyes";
 
         export let canvasDimensions = {
         targetWidth: 0,
         targetHeight: 0
         };
-        export let editedImage:HTMLImageElement;
+        export let editedImage: HTMLImageElement | undefined;
 
         let photoCanvas: HTMLCanvasElement;
         let circleCanvas: HTMLCanvasElement;
-        let faceCanvas: HTMLCanvasElement
 
         const {fillStyle, globalAlpha, circleRadius, circleCenter} = getParamsContext();
         const {grayscale, brightness, sepia, hueRotate, saturate, contrast} = getFilterContext()
-        const {enableDetection} = getFaceContext()
+        const {eyeOverlay} = getFaceContext()
+        const {commit} = getHistoryContext()
 
 
         //Making sure that we don't move the circle out of bounds(OOB)
@@ -48,6 +49,8 @@ import { getFaceContext, getFilterContext, getParamsContext, type CircleCenter }
         const removeMoveListners = () => {
             window.removeEventListener("mousemove", handleCircleMovement)
             window.removeEventListener("mouseup", removeMoveListners)
+            // The whole drag is one undo step
+            commit()
         }
         //
 
@@ -59,15 +62,6 @@ import { getFaceContext, getFilterContext, getParamsContext, type CircleCenter }
             $circleCenter = {
                 x: target.x,
                 y: target.y
-            }
-        };
-        //
-
-        //Positioning the circle in center with every resize/reupload
-        $: if (editedImage) {
-            $circleCenter = {
-                x: canvasDimensions.targetWidth/2,
-                y: canvasDimensions.targetHeight/2
             }
         };
         //
@@ -91,13 +85,17 @@ import { getFaceContext, getFilterContext, getParamsContext, type CircleCenter }
 
 
 
-        //Reacting to every change of params and updating the canvas with image
-        $:  if (photoCanvas && circleCanvas && editedImage && ($enableDetection || !$enableDetection)) {
+        //Reacting to every change of params and redrawing the canvas from the image.
+        //The eye overlay is part of the state, so it is redrawn as well (with the same filters).
+        $:  if (photoCanvas && circleCanvas && editedImage) {
             const photoctx = photoCanvas.getContext("2d")!;
-            photoCanvas.width = circleCanvas.width = faceCanvas.width = canvasDimensions.targetWidth;
-            photoCanvas.height = circleCanvas.height =  faceCanvas.height = canvasDimensions.targetHeight;
+            photoCanvas.width = circleCanvas.width = canvasDimensions.targetWidth;
+            photoCanvas.height = circleCanvas.height = canvasDimensions.targetHeight;
             photoctx.filter = `grayscale(${$grayscale}%) brightness(${$brightness}%) sepia(${$sepia}%) hue-rotate(${$hueRotate}deg) saturate(${$saturate}%) contrast(${$contrast}%)`
             drawImage(photoCanvas, editedImage)
+            if ($eyeOverlay) {
+                drawEyeOverlay(photoctx, $eyeOverlay)
+            }
             drawRectWithCircle(circleCanvas, $circleRadius, $fillStyle, $globalAlpha, $circleCenter);
         };
         //
@@ -130,7 +128,6 @@ import { getFaceContext, getFilterContext, getParamsContext, type CircleCenter }
 
 <div class="relative">
     <canvas id="photoCanvas" bind:this={photoCanvas} class="absolute"></canvas>
-    <canvas id="faceCanvas" class="absolute" bind:this={faceCanvas}></canvas>
     <canvas bind:this={circleCanvas} class="cursor-pointer relative z-20"
 
     on:mousedown={(e) => {

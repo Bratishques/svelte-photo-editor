@@ -1,5 +1,5 @@
 <script lang="ts">
-import { getParamsContext } from "./lib/context";
+import { getHistoryContext, getParamsContext } from "./lib/context";
 
     export let canvasDimensions = {
         targetWidth: 0,
@@ -7,6 +7,7 @@ import { getParamsContext } from "./lib/context";
         };
     let maxCircleRad = 50;
     const {fillStyle, globalAlpha, circleRadius} = getParamsContext();
+    const {commit} = getHistoryContext();
 
     $: if (canvasDimensions.targetWidth) {
         maxCircleRad  = getMaxCircleRadius(canvasDimensions);
@@ -37,14 +38,16 @@ import { getParamsContext } from "./lib/context";
             on:input={(e) => {
                 $globalAlpha = Number(e.currentTarget.value)/100
             }}
+            on:change={commit}
             >
             </label>
         <label class="mb-4 flex w-72 justify-between">
             Cut circle radius
-            <input class="ml-4" type="range" min="25" max={maxCircleRad}
+            <input class="ml-4" type="range" min="25" max={maxCircleRad} value={$circleRadius}
             on:input={(e) => {
                 $circleRadius = Number(e.currentTarget.value)
             }}
+            on:change={commit}
             >
             </label>
         <label class="mb-4 flex w-72 justify-between">
@@ -52,6 +55,7 @@ import { getParamsContext } from "./lib/context";
             <input class="pl-5 w-24 ml-4 dark:bg-gray-700" type="text" value={$fillStyle}
             on:change={(e) => {
                 $fillStyle = e.currentTarget.value
+                commit()
             }}
             >
         </label>
