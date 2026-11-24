@@ -1,24 +1,17 @@
-<script>
-import { setContext } from "svelte";
+<script lang="ts">
 import { writable } from "svelte/store";
+import { setParamsContext } from "../lib/context";
 
     //Values for 4 reactive parameters
-    let globalAlpha = writable(0.4);
-    let fillStyle = writable('#FFFFFF');
-    let circleRadius = writable(50);
-    let circleCenter = writable({
-        x: 0,
-        y: 0
-    })
-
-    setContext("params", {
-        fillStyle: fillStyle,
-        globalAlpha: globalAlpha,
-        circleRadius: circleRadius,
-        circleCenter: circleCenter
+    setParamsContext({
+        fillStyle: writable('#FFFFFF'),
+        globalAlpha: writable(0.4),
+        circleRadius: writable(50),
+        circleCenter: writable({
+            x: 0,
+            y: 0
+        })
     });
-
-
 </script>
 
 <div>

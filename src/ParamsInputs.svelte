@@ -1,12 +1,12 @@
-<script>
-import { getContext } from "svelte";
+<script lang="ts">
+import { getParamsContext } from "./lib/context";
 
     export let canvasDimensions = {
         targetWidth: 0,
         targetHeight: 0
         };
     let maxCircleRad = 50;
-    const {fillStyle, globalAlpha, circleRadius} = getContext("params");
+    const {fillStyle, globalAlpha, circleRadius} = getParamsContext();
 
     $: if (canvasDimensions.targetWidth) {
         maxCircleRad  = getMaxCircleRadius(canvasDimensions);
@@ -19,7 +19,7 @@ import { getContext } from "svelte";
     //
     
     //By doing this function on each update, we ensure that circle never gets OOB
-    const getMaxCircleRadius = (canvasDimensions) => {
+    const getMaxCircleRadius = (canvasDimensions: { targetWidth: number, targetHeight: number }) => {
         const min = Math.min(canvasDimensions.targetWidth, canvasDimensions.targetHeight)
         return min/2
     };
@@ -35,7 +35,7 @@ import { getContext } from "svelte";
             Overlay opacity
             <input class="ml-4" type="range" min="0" max="100" value={$globalAlpha * 100}
             on:input={(e) => {
-                $globalAlpha = e.target.value/100
+                $globalAlpha = Number(e.currentTarget.value)/100
             }}
             >
             </label>
@@ -43,13 +43,17 @@ import { getContext } from "svelte";
             Cut circle radius
             <input class="ml-4" type="range" min="25" max={maxCircleRad}
             on:input={(e) => {
-                $circleRadius = Number(e.target.value)
+                $circleRadius = Number(e.currentTarget.value)
             }}
             >
             </label>
         <label class="mb-4 flex w-72 justify-between">
             Overlay Color Hex
-            <input class="pl-5 w-24 ml-4 dark:bg-gray-700" type="text" value={$fillStyle}>
+            <input class="pl-5 w-24 ml-4 dark:bg-gray-700" type="text" value={$fillStyle}
+            on:change={(e) => {
+                $fillStyle = e.currentTarget.value
+            }}
+            >
         </label>
     </div>
 </div>

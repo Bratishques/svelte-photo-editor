@@ -1,6 +1,6 @@
 <script lang="ts">
-import { getContext, onMount } from "svelte";
-import faceapi from "../faceApi/faceapi";
+import { onMount } from "svelte";
+import { getParamsContext } from "./lib/context";
 import FaceInputs from "./FaceInputs.svelte";
 import FilterInputs from "./FilterInputs.svelte";
 import ParamsInputs from "./ParamsInputs.svelte";
@@ -23,7 +23,7 @@ import ResultCanvas from "./ResultCanvas.svelte";
     }
     let results: HTMLCanvasElement[] = [];
 
-    const {circleRadius, circleCenter} = getContext('params')
+    const {circleRadius, circleCenter} = getParamsContext()
     
 
     //onMount resize listener for responsive interface
@@ -112,15 +112,14 @@ import ResultCanvas from "./ResultCanvas.svelte";
     //Cutting the image from photo with with filters
     const cutImage = () => {
         const photoCanvas = document.getElementById("photoCanvas") as HTMLCanvasElement
-        const photoctx = photoCanvas.getContext("2d")
+        const photoctx = photoCanvas.getContext("2d")!
         const result = document.createElement('canvas')
         result.style.marginBottom="20px"
-        const resultctx = result.getContext("2d")
+        const resultctx = result.getContext("2d")!
         const left = $circleCenter.x - $circleRadius
         const top = $circleCenter.y - $circleRadius
         const resultData = photoctx.getImageData(left, top,
         $circleRadius*2, $circleRadius*2)
-        console.log($circleCenter, $circleRadius)
         result.width = result.height = $circleRadius*2
         resultctx.putImageData(resultData, 0 ,0)
         resultctx.globalCompositeOperation="destination-in";
@@ -133,11 +132,12 @@ import ResultCanvas from "./ResultCanvas.svelte";
     //
 
     //Adapter to get file url from file
-    const URLFromFile = (e) => {
-        console.log(e.target.files[0])
-        const url = URL.createObjectURL(e.target.files[0])
-        uploadImage(url)
-        e.target.value = null
+    const URLFromFile = (e: Event & { currentTarget: HTMLInputElement }) => {
+        const file = e.currentTarget.files?.[0]
+        if (!file) return
+        uploadImage(URL.createObjectURL(file))
+        // Reset the input so the same file can be selected again
+        e.currentTarget.value = ""
     }
     //
 
@@ -204,19 +204,17 @@ import ResultCanvas from "./ResultCanvas.svelte";
     </div>
 
     </div>
-    <div bind:this={canvasParent} class="relative w-full h-full bg-gray-200 flex justify-center mb-8">
+    <div bind:this={canvasParent} class="relative w-full h-full bg-gray-200 dark:bg-gray-700 flex justify-center mb-8">
         <div class="select-none relative w-auto flex">
             <PhotoCanvas canvasDimensions={canvasDimensions} editedImage={editedImage}
             />
-            <div 
-            on:touchstart = {(e) => {
-                console.log(e)
-            }}
+            <!-- Corner handles for mouse-driven resizing (no touch/keyboard support yet) -->
+            <div aria-hidden="true"
             on:mousedown={dragLeft}
             class="rounded cursor-nw z-30 {editedImage ? 'absolute' : 'hidden'} w-4 h-4 bg-red-600  border-2 border-gray-400"></div>
-            <div on:mousedown={dragRight}  class="rounded  cursor-ne z-30 {editedImage ? 'absolute' : 'hidden'} w-4 h-4 bg-red-600  border-2 border-gray-400 right-0"></div>
-            <div  on:mousedown={dragRight} class="rounded  cursor-nwse z-30 {editedImage ? 'absolute' : 'hidden'} w-4 h-4 bg-red-600   border-2 border-gray-400 right-0 bottom-0"></div>
-            <div on:mousedown={dragLeft}  class="rounded cursor-nesw z-30 {editedImage ? 'absolute' : 'hidden'} w-4 h-4 bg-red-600 border-2 border-gray-400 bottom-0"></div>
+            <div aria-hidden="true" on:mousedown={dragRight}  class="rounded  cursor-ne z-30 {editedImage ? 'absolute' : 'hidden'} w-4 h-4 bg-red-600  border-2 border-gray-400 right-0"></div>
+            <div aria-hidden="true" on:mousedown={dragRight} class="rounded  cursor-nwse z-30 {editedImage ? 'absolute' : 'hidden'} w-4 h-4 bg-red-600   border-2 border-gray-400 right-0 bottom-0"></div>
+            <div aria-hidden="true" on:mousedown={dragLeft}  class="rounded cursor-nesw z-30 {editedImage ? 'absolute' : 'hidden'} w-4 h-4 bg-red-600 border-2 border-gray-400 bottom-0"></div>
         </div>
     </div>
     <div>

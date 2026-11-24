@@ -1,15 +1,10 @@
-<script>
-import { setContext } from "svelte";
-
+<script lang="ts">
 import { writable } from "svelte/store";
+import { setFaceContext } from "../lib/context";
 
-
-    const enableDetection = writable(false)
-
-    setContext("face", {
-        enableDetection: enableDetection
+    setFaceContext({
+        enableDetection: writable(false)
     });
-    
 </script>
 
 <div>
