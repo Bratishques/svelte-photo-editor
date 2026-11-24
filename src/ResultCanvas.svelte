@@ -13,7 +13,8 @@ import { onMount } from "svelte";
         const img =  result.toDataURL("image/png")
         var a  = document.createElement('a');
         a.href = img;
-        a.download = `${new Date()}.png`;
+        // e.g. "cut-2021-02-12T18-22-55-000Z.png" (no spaces or colons)
+        a.download = `cut-${new Date().toISOString().replace(/[:.]/g, "-")}.png`;
          a.click()
     };
 </script>
