@@ -1,8 +1,11 @@
 <script lang="ts">
-import { getFilterContext } from "./lib/context";
+import { getFilterContext, getHistoryContext } from "./lib/context";
 
     //This file separates the inputs from other components
     const {grayscale, brightness, sepia, hueRotate, saturate, contrast} = getFilterContext();
+    // Sliders update the preview on every input; the undo step is recorded on
+    // change, i.e. once the slider is released.
+    const {commit} = getHistoryContext();
 
 </script>
 <div class="flex flex-col md:w-6/12 mb-8">
@@ -20,6 +23,7 @@ import { getFilterContext } from "./lib/context";
             on:input={(e) => {
                 $grayscale = Number(e.currentTarget.value)
             }}
+            on:change={commit}
             >
         </label>
         <label class="mb-4 flex w-60 justify-between">
@@ -33,6 +37,7 @@ import { getFilterContext } from "./lib/context";
             on:input={(e) => {
                 $brightness = Number(e.currentTarget.value)
             }}
+            on:change={commit}
             >
         </label>
         <label class="mb-4 flex w-60 justify-between">
@@ -46,6 +51,7 @@ import { getFilterContext } from "./lib/context";
             on:input={(e) => {
                 $sepia = Number(e.currentTarget.value)
             }}
+            on:change={commit}
             >
         </label>
         <label class="mb-4 flex w-60 justify-between">
@@ -59,6 +65,7 @@ import { getFilterContext } from "./lib/context";
             on:input={(e) => {
                 $hueRotate = Number(e.currentTarget.value)
             }}
+            on:change={commit}
             >
         </label>
         <label class="mb-4 flex w-60 justify-between">
@@ -72,6 +79,7 @@ import { getFilterContext } from "./lib/context";
             on:input={(e) => {
                 $saturate = Number(e.currentTarget.value)
             }}
+            on:change={commit}
             >
         </label>
         <label class="mb-4 flex w-60 justify-between">
@@ -85,6 +93,7 @@ import { getFilterContext } from "./lib/context";
             on:input={(e) => {
                 $contrast = Number(e.currentTarget.value)
             }}
+            on:change={commit}
             >
         </label>
 

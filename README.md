@@ -20,7 +20,8 @@ Everything runs in the browser; images are never uploaded anywhere.
 This was my first Svelte project, written in February 2021 to learn the framework and the Canvas API.
 In 2026 I moved it from the original Rollup template to Vite, Svelte 5 and Tailwind CSS 3 so it
 installs and builds on current Node.js, added type checking, CI and a GitHub Pages deployment,
-and fixed a few small bugs. The editor logic itself is still the 2021 code.
+and fixed a few small bugs. Later I added undo/redo, which also moved the eye overlay into the
+editor state; the rest of the editor logic is still the 2021 code.
 
 ## Features
 
@@ -31,24 +32,39 @@ and fixed a few small bugs. The editor logic itself is still the 2021 code.
   circle always stays inside the image. The area outside the circle is dimmed with an overlay whose
   opacity and colour (any CSS colour, applied on Enter or blur) can be changed.
 - **Resize** the image on the canvas by dragging the red corner handles.
-- **Face detection** (optional): detects a single face with the SSD MobileNet v1 detector and the
-  tiny 68-point landmark model, then paints an eye image over each eye, rotated to the eye's tilt.
-  The library and the model weights (~5.6 MB) are loaded only when you first click *Detect Face*.
+- **Face detection** (optional): detects a single face on the original image with the SSD MobileNet v1
+  detector and the tiny 68-point landmark model, then paints an eye image over each eye, rotated to
+  the eye's tilt. The overlay is kept as part of the editor state, so it stays in place when you change
+  filters or resize the image, and can be removed with *Remove eyes*. The library and the model weights
+  (~5.6 MB) are loaded only when you first click *Detect Face*.
+- **Undo / redo** for every change to the picture: filters, overlay opacity and colour, circle radius
+  and position, resizing, adding or removing the eye overlay. A slider drag or a mouse drag is one step,
+  recorded when you release it. Up to 100 steps are kept per image; uploading a new image starts a new
+  history.
 - **Cut** the circle out of the current image (with filters and eye overlay applied).
   Each cut is added to the *Results* list and can be saved as a PNG file.
 - **Light and dark theme**, defaulting to the system preference.
+
+### Keyboard shortcuts
+
+| Shortcut                                     | Action |
+| -------------------------------------------- | ------ |
+| `Ctrl+Z` / `Cmd+Z`                           | Undo   |
+| `Ctrl+Shift+Z` / `Cmd+Shift+Z`, `Ctrl+Y`     | Redo   |
+
+The shortcuts are ignored while a text field (the overlay colour) has focus, so the field keeps its own
+undo. They also work on non-Latin keyboard layouts.
 
 ## Limitations
 
 These are known and left as they are:
 
 - Mouse only: moving the circle and the resize handles do not support touch or keyboard.
-- The eye overlay is drawn onto the photo canvas, so changing any filter or selection parameter
-  afterwards redraws the photo and removes it. Run face detection last, right before cutting.
 - Only one face per image is detected.
 - The cut uses the on-screen (possibly scaled) canvas, so its resolution matches what you see,
   not the original file.
-- There is no undo.
+- The history covers the editing state, not the *Results* list: cuts are outputs and stay when you undo.
+- Resizing re-centres the circle, as it always has.
 
 ## Tech stack
 
@@ -78,6 +94,7 @@ Other scripts:
 | `npm run build`   | Production build into `dist/`                 |
 | `npm run preview` | Serve the production build locally            |
 | `npm run check`   | Type-check `.ts` and `.svelte` files          |
+| `npm test`        | Unit tests (Vitest)                           |
 
 The build uses a relative base path, so `dist/` can be served from a domain root or a sub-path.
 
@@ -91,8 +108,8 @@ public/
 src/
   main.ts                   mounts the app
   App.svelte                context providers + layout
-  PhotoEditor.svelte        upload, resize handles, cutting, results list
-  PhotoCanvas.svelte        stacked canvases: photo, face layer, overlay with the circular hole
+  PhotoEditor.svelte        upload, resize handles, undo/redo, cutting, results list
+  PhotoCanvas.svelte        stacked canvases: photo (with the eye overlay), overlay with the circular hole
   FilterInputs.svelte       filter sliders
   ParamsInputs.svelte       overlay opacity, circle radius, overlay colour
   FaceInputs.svelte         face detection and eye overlay drawing
@@ -101,17 +118,22 @@ src/
   context/                  components that provide shared Svelte stores via context
   lib/context.ts            typed getters/setters for those contexts
   lib/faceapi.ts            lazy face-api.js model loading
-.github/workflows/          CI (type check + build) and GitHub Pages deployment
+  lib/history.ts            immutable undo/redo history (past / present / future)
+  lib/editorState.ts        editor state as plain data: read from / write to the stores
+  lib/eyes.ts               eye overlay geometry, image loading and drawing
+  lib/keyboard.ts           undo/redo shortcut matching
+  lib/*.test.ts             unit tests
+.github/workflows/          CI (type check + unit tests + build) and GitHub Pages deployment
 ```
 
 ## Possible improvements
 
-- Keep the eye overlay on its own layer so it survives filter changes, and offer more overlay styles.
+- More eye overlay styles.
 - Pointer events for touch support and keyboard controls for the selection.
 - Cut from the full-resolution image instead of the scaled canvas.
-- Undo/redo and a reset button for filters.
+- A reset button for filters.
 - Replace the unmaintained face-api.js with a maintained fork or MediaPipe.
-- Component tests and an end-to-end test of the upload → cut → save flow in CI.
+- Component tests and an end-to-end test of the upload → edit → undo → cut → save flow in CI.
 
 ## License
 

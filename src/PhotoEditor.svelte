@@ -1,6 +1,9 @@
 <script lang="ts">
-import { onMount } from "svelte";
-import { getParamsContext } from "./lib/context";
+import { onMount, tick } from "svelte";
+import { getFaceContext, getFilterContext, getParamsContext, setHistoryContext } from "./lib/context";
+import { applyState, captureState, deepEqual, fitState, HISTORY_LIMIT, type EditorContexts, type EditorState } from "./lib/editorState";
+import { canRedo, canUndo, commit, createHistory, redo, undo, type History } from "./lib/history";
+import { getHistoryShortcut, isTextEditingTarget } from "./lib/keyboard";
 import FaceInputs from "./FaceInputs.svelte";
 import FilterInputs from "./FilterInputs.svelte";
 import ParamsInputs from "./ParamsInputs.svelte";
@@ -13,7 +16,7 @@ import ResultCanvas from "./ResultCanvas.svelte";
     }
     let isResizing: boolean = false
     let canvasParent: HTMLDivElement;
-    let editedImage: HTMLImageElement;
+    let editedImage: HTMLImageElement | undefined;
     let maxWidth: number;
     let dragStartX: number;
     let dragPositionX: number;
@@ -23,8 +26,68 @@ import ResultCanvas from "./ResultCanvas.svelte";
     }
     let results: HTMLCanvasElement[] = [];
 
-    const {circleRadius, circleCenter} = getParamsContext()
-    
+    const contexts: EditorContexts = {
+        params: getParamsContext(),
+        filter: getFilterContext(),
+        face: getFaceContext(),
+    }
+    const {circleRadius, circleCenter} = contexts.params
+
+    //Undo/redo history of the current image (see lib/history.ts)
+    let history: History<EditorState> | undefined
+
+    const recordStep = async () => {
+        const image = editedImage
+        // Let reactive statements (e.g. the radius clamp) settle first
+        await tick()
+        // No history before the first upload; skip a step that belongs to a replaced picture
+        if (!history || image !== editedImage) return
+        history = commit(history, captureState(contexts, toSize(canvasDimensions)), {
+            limit: HISTORY_LIMIT,
+            equals: deepEqual,
+        })
+    }
+    setHistoryContext({ commit: recordStep })
+
+    const restore = (state: EditorState) => {
+        maxWidth = canvasParent.getBoundingClientRect().width
+        const size = applyState(contexts, fitState(state, maxWidth))
+        canvasDimensions = { targetWidth: size.width, targetHeight: size.height }
+    }
+
+    const undoStep = () => {
+        if (!history || !canUndo(history)) return
+        history = undo(history)
+        restore(history.present)
+    }
+
+    const redoStep = () => {
+        if (!history || !canRedo(history)) return
+        history = redo(history)
+        restore(history.present)
+    }
+
+    const handleKeydown = (e: KeyboardEvent) => {
+        const action = getHistoryShortcut(e)
+        if (!action || isTextEditingTarget(e.target)) return
+        e.preventDefault()
+        if (action === "undo") undoStep()
+        else redoStep()
+    }
+
+    const toSize = (dimensions: CanvasDimensions) => ({
+        width: dimensions.targetWidth,
+        height: dimensions.targetHeight,
+    })
+
+    const centerCircle = () => {
+        $circleCenter = {
+            x: canvasDimensions.targetWidth/2,
+            y: canvasDimensions.targetHeight/2
+        }
+    }
+    //
+
 
     //onMount resize listener for responsive interface
     onMount(async () => {
@@ -72,6 +135,8 @@ import ResultCanvas from "./ResultCanvas.svelte";
         window.removeEventListener("mousemove", moveRightListener)
         window.removeEventListener("mousemove", moveLeftListener)
         window.removeEventListener("mouseup", removeListeners)
+        // The whole resize drag is one undo step
+        recordStep()
     }
     //
 
@@ -101,11 +166,13 @@ import ResultCanvas from "./ResultCanvas.svelte";
 
     //Function to pass the the values to state and start the callback chain to resize the image
     const resizeCanvasWithImage = (scale:number) => {
+        if (!editedImage) return
         const targetWidth = canvasDimensions.targetWidth * scale
         canvasDimensions = {
             targetWidth: targetWidth,
             targetHeight: targetWidth * editedImage.height/editedImage.width
         }
+        centerCircle()
     };
     //
 
@@ -150,17 +217,33 @@ import ResultCanvas from "./ResultCanvas.svelte";
     //
 
     //Upload image from given url
+    let pendingImage: HTMLImageElement | undefined
     const uploadImage = (url: string) => {
         const image = new Image()
+        pendingImage = image
         image.src = url
         image.onload = () => {
+           // Only the most recently selected file is shown
+           if (pendingImage !== image) return
            maxWidth = canvasParent.getBoundingClientRect().width
            canvasDimensions = checkMaxWidth(image.width, image.height, maxWidth)
            editedImage = image
+           centerCircle()
+           // A new picture starts a new history. Filters and overlay settings
+           // carry over as before, the eye overlay belongs to the old picture.
+           contexts.face.eyeOverlay.set(null)
+           history = undefined
+           tick().then(() => {
+               if (editedImage === image) {
+                   history = createHistory(captureState(contexts, toSize(canvasDimensions)))
+               }
+           })
         }
     };
     //
 </script>
+
+<svelte:window on:keydown={handleKeydown}/>
 
 <div class="relative md:p-16 p-6">
     <div>
@@ -188,10 +271,24 @@ import ResultCanvas from "./ResultCanvas.svelte";
         <ParamsInputs canvasDimensions={canvasDimensions}/>   
         </div>
         <div class="w-full md:flex">
-        <FaceInputs/>
+        <FaceInputs image={editedImage}/>
         </div>
-        <div class="flex justify-center w-full">
-            <button class="rounded bg-blue-400 p-2 text-white font-semibold"
+        <div class="flex justify-center gap-2 w-full">
+            <button class="rounded bg-blue-400 p-2 text-white font-semibold disabled:opacity-50"
+            disabled={!history || !canUndo(history)}
+            title="Undo (Ctrl+Z)"
+            on:click={undoStep}
+            >
+                    Undo
+                </button>
+            <button class="rounded bg-blue-400 p-2 text-white font-semibold disabled:opacity-50"
+            disabled={!history || !canRedo(history)}
+            title="Redo (Ctrl+Shift+Z or Ctrl+Y)"
+            on:click={redoStep}
+            >
+                    Redo
+                </button>
+            <button class="rounded bg-blue-400 p-2 text-white font-semibold disabled:opacity-50"
             disabled="{!editedImage}"
             on:click={cutImage}
             >
