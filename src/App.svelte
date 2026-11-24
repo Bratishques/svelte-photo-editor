@@ -18,13 +18,3 @@ import ThemeSwitcher from "./ThemeSwitcher.svelte";
 	</ParamsContext>
 
 </main>
-
-<style global lang="postcss">
-  /* purgecss start ignore */
-  @tailwind base;
-  @tailwind components;
-  /* purgecss end ignore */
-
-  @tailwind utilities;
-
-</style>

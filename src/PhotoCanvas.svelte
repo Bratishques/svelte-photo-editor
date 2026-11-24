@@ -1,14 +1,6 @@
 <script lang="ts">
-import type { Image } from "canvas";
+import { getFaceContext, getFilterContext, getParamsContext, type CircleCenter } from "./lib/context";
 
-import { getContext } from "svelte";
-import faceapi from "../faceApi/faceapi";
-import App from "./App.svelte";
-
-        type CircleCenter = {
-            x: number,
-            y: number
-        }
         export let canvasDimensions = {
         targetWidth: 0,
         targetHeight: 0
@@ -19,9 +11,9 @@ import App from "./App.svelte";
         let circleCanvas: HTMLCanvasElement;
         let faceCanvas: HTMLCanvasElement
 
-        const {fillStyle, globalAlpha, circleRadius, circleCenter} = getContext("params");
-        const {grayscale, brightness, sepia, hueRotate, saturate, contrast} = getContext("filter")
-        const {enableDetection} = getContext('face')
+        const {fillStyle, globalAlpha, circleRadius, circleCenter} = getParamsContext();
+        const {grayscale, brightness, sepia, hueRotate, saturate, contrast} = getFilterContext()
+        const {enableDetection} = getFaceContext()
 
 
         //Making sure that we don't move the circle out of bounds(OOB)
@@ -101,7 +93,7 @@ import App from "./App.svelte";
 
         //Reacting to every change of params and updating the canvas with image
         $:  if (photoCanvas && circleCanvas && editedImage && ($enableDetection || !$enableDetection)) {
-            const photoctx = photoCanvas.getContext("2d");
+            const photoctx = photoCanvas.getContext("2d")!;
             photoCanvas.width = circleCanvas.width = faceCanvas.width = canvasDimensions.targetWidth;
             photoCanvas.height = circleCanvas.height =  faceCanvas.height = canvasDimensions.targetHeight;
             photoctx.filter = `grayscale(${$grayscale}%) brightness(${$brightness}%) sepia(${$sepia}%) hue-rotate(${$hueRotate}deg) saturate(${$saturate}%) contrast(${$contrast}%)`
@@ -112,13 +104,14 @@ import App from "./App.svelte";
 
         //Draw the rect with circle inside to ensure comfortable positioning for cutting the circular image
         const drawRectWithCircle = (canvas:HTMLCanvasElement, radius:number, fillStyle:string, globalAlpha: number, $circleCenter:CircleCenter) => {
-            const ctx = canvas.getContext('2d');
+            const ctx = canvas.getContext('2d')!;
             ctx.clearRect(0,0,canvas.width, canvas.height)
             ctx.fillStyle = fillStyle;
             ctx.globalAlpha = globalAlpha;
             ctx.fillRect(0,0, canvas.width, canvas.height);
             ctx.globalCompositeOperation="destination-out";
             ctx.globalAlpha = 1;
+            ctx.beginPath()
             ctx.arc($circleCenter.x, $circleCenter.y, radius, 0, 2 * Math.PI)
             ctx.fill()
         };
@@ -126,7 +119,7 @@ import App from "./App.svelte";
 
         //Draw image
         const drawImage = (canvas: HTMLCanvasElement, image: HTMLImageElement) => {
-            const ctx = canvas.getContext('2d')
+            const ctx = canvas.getContext('2d')!
             ctx.drawImage(image,0,0, canvas.width, canvas.height)
         }
 
@@ -136,8 +129,8 @@ import App from "./App.svelte";
 </script>
 
 <div class="relative">
-    <canvas id="photoCanvas" bind:this={photoCanvas} class="absolute"/>
-    <canvas id="faceCanvas" class="absolute" bind:this={faceCanvas}/>
+    <canvas id="photoCanvas" bind:this={photoCanvas} class="absolute"></canvas>
+    <canvas id="faceCanvas" class="absolute" bind:this={faceCanvas}></canvas>
     <canvas bind:this={circleCanvas} class="cursor-pointer relative z-20"
 
     on:mousedown={(e) => {
@@ -145,5 +138,5 @@ import App from "./App.svelte";
         window.addEventListener("mousemove", handleCircleMovement)
         window.addEventListener("mouseup", removeMoveListners)
     }}
-    />
+    ></canvas>
 </div>

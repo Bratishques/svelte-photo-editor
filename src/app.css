@@ -1,3 +1,5 @@
+/* Base styles kept from the original template. They come before Tailwind's
+   preflight, as in the original setup, so preflight still takes precedence. */
 html, body {
 	position: relative;
 	width: 100%;
@@ -61,4 +63,13 @@ button:not(:disabled):active {
 
 button:focus {
 	border-color: #666;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Keep the dark background behind the whole page, not only <main> */
+html.dark {
+	background-color: theme('colors.gray.800');
 }
